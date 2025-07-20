@@ -11,7 +11,6 @@ type (
 	Config struct {
 		SmtpHost         string `koanf:"SMTP_HOST"`
 		SmtpPort         int    `koanf:"SMTP_PORT"`
-		SmtpSenderName   string `koanf:"SMTP_SENDER_NAME"`
 		SmtpAuthEmail    string `koanf:"SMTP_AUTH_EMAIL"`
 		SmtpAuthPassword string `koanf:"SMTP_AUTH_PASSWORD"`
 	}
