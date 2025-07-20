@@ -349,7 +349,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 	}
 }
 
-func TestSeq(t *testing.T) {
+func TestGenerateRunTimeSequence(t *testing.T) {
 	type args struct {
 		lasSeq time.Time
 		seqs   []int
@@ -418,7 +418,7 @@ func TestSeq(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NextRunSequence(tt.args.lasSeq, tt.args.seqs); !reflect.DeepEqual(got, tt.want) {
+			if got := generateRunTimeSequence(tt.args.lasSeq, tt.args.seqs); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Seq() = %v, want %v", got, tt.want)
 			}
 		})

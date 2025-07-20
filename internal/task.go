@@ -119,7 +119,7 @@ func (s *Task) GetNextRunAt(lastRun time.Time) time.Time {
 	// nextRUnAt := s.nextRunAt.Add(s.repeatInterval)
 	if !s.EndTime.IsZero() && s.nextRunAt.After(s.EndTime) {
 		if len(s.RepeatDaily) > 0 {
-			nextDay := NextRunSequence(s.nextRunAt, s.RepeatDaily)
+			nextDay := generateRunTimeSequence(s.nextRunAt, s.RepeatDaily)
 			return time.Date(
 				nextDay.Year(),
 				nextDay.Month(),
@@ -137,7 +137,7 @@ func (s *Task) GetNextRunAt(lastRun time.Time) time.Time {
 	return s.nextRunAt
 }
 
-func NextRunSequence(lasSeq time.Time, sequence []int) time.Time {
+func generateRunTimeSequence(lasSeq time.Time, sequence []int) time.Time {
 	for _, day := range sequence {
 		if day < int(time.Sunday) || day > int(time.Saturday) {
 			return time.Time{}
