@@ -46,6 +46,11 @@ func (s *TaskService) ListTask(ctx context.Context) ([]internal.Task, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if len(tasks) == 0 {
+		return []internal.Task{}, nil
+	}
+
 	return tasks, nil
 }
 

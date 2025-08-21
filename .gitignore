@@ -1,1 +1,4 @@
+# Ignore Air build output and temporary files
+/tmp/
 .env
+scheduler.db
