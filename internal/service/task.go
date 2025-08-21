@@ -9,6 +9,9 @@ import (
 type (
 	sqlRepo interface {
 		CreateTask(ctx context.Context, task internal.Task) (err error)
+		ListTasks(ctx context.Context) ([]internal.Task, error)
+		DeleteTask(ctx context.Context, id int) error
+		UpdateTask(ctx context.Context, id int, req internal.UpdateTaskParams) error
 		// CreateSchedule(task *internal.Schedule) error
 	}
 
@@ -36,4 +39,20 @@ func (s *TaskService) CreateTask(ctx context.Context, req internal.CreateTaskPar
 	}
 
 	return nil
+}
+
+func (s *TaskService) ListTask(ctx context.Context) ([]internal.Task, error) {
+	tasks, err := s.sqlRepo.ListTasks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (s *TaskService) DeleteTask(ctx context.Context, id int) error {
+	return s.sqlRepo.DeleteTask(ctx, id)
+}
+
+func (s *TaskService) UpdateTask(ctx context.Context, id int, req internal.UpdateTaskParams) error {
+	return s.sqlRepo.UpdateTask(ctx, id, req)
 }

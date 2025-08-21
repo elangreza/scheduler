@@ -47,8 +47,23 @@ func main() {
 	schedulerService := service.NewTaskService(taskRepo)
 	handler := rest.NewHandler(schedulerService)
 
-	http.HandleFunc("POST /tasks", handler.CreateTask)
+	http.HandleFunc("/", handler.RootHandler)
+	http.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handler.ListTaskHandler(w, r)
+		case http.MethodDelete:
+			handler.DeleteTaskHandler(w, r)
+		case http.MethodPut, http.MethodPatch:
+			handler.UpdateTaskHandler(w, r)
+		case http.MethodPost:
+			handler.CreateTask(w, r)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
+	log.Println("Server started at http://localhost:8080/")
 	http.ListenAndServe(":8080", nil)
 
 	// to := []string{"babehracing14@gmail.com"}
