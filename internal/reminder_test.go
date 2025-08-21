@@ -6,15 +6,14 @@ import (
 	"time"
 )
 
-func TestNewTask(t *testing.T) {
+func TestNewReminder(t *testing.T) {
 
 	mockedTimeNow := "2025-07-20T10:38:23+07:00"
 	mockedTimeNowParsed, _ := time.Parse(time.RFC3339, mockedTimeNow)
 	mockedTimeNowAfterOneHour := "2025-07-20T11:38:23+07:00"
 	mockedTimeNowAfterOneDayParsed, _ := time.Parse(time.RFC3339, mockedTimeNowAfterOneHour)
 	type args struct {
-		name         string
-		description  string
+		taskID       int64
 		startTime    string
 		endTime      string
 		repeatHourly string
@@ -23,14 +22,13 @@ func TestNewTask(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Task
+		want    *Reminder
 		wantErr bool
 	}{
 		{
 			name: "empty start time",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    "",
 				endTime:      "",
 				repeatHourly: "",
@@ -42,8 +40,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "failed to parsed start time",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    "a",
 				endTime:      "",
 				repeatHourly: "",
@@ -55,8 +52,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "failed to parsed end time",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "a",
 				repeatHourly: "",
@@ -66,23 +62,9 @@ func TestNewTask(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "name is empty",
-			args: args{
-				name:         "",
-				description:  "a",
-				startTime:    mockedTimeNow,
-				endTime:      "",
-				repeatHourly: "",
-				repeatDaily:  []int{},
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
 			name: "start date is overlapping the end date",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNowAfterOneHour,
 				endTime:      mockedTimeNow,
 				repeatHourly: "",
@@ -94,8 +76,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "failed to parsed repeat hourly",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "",
 				repeatHourly: "xx",
@@ -107,8 +88,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "repeat hourly is zero",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "",
 				repeatHourly: "-1s",
@@ -120,8 +100,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "repeat hourly is overlapping the end time",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "2h",
@@ -133,8 +112,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "invalid repeatDaily",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "",
 				repeatHourly: "2h",
@@ -146,8 +124,7 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "invalid repeatDaily",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "",
 				repeatHourly: "2h",
@@ -159,17 +136,15 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "success with hoRepeatHourly and RepeatDaily",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "20m",
 				repeatDaily:  []int{1, 5, 3},
 			},
-			want: &Task{
+			want: &Reminder{
 				ID:             0,
-				Name:           "a",
-				Description:    "a",
+				TaskID:         1,
 				StartTime:      mockedTimeNowParsed,
 				EndTime:        mockedTimeNowAfterOneDayParsed,
 				RepeatHourly:   "20m",
@@ -185,17 +160,15 @@ func TestNewTask(t *testing.T) {
 		{
 			name: "success no routine",
 			args: args{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      "",
 				repeatHourly: "",
 				repeatDaily:  []int{},
 			},
-			want: &Task{
+			want: &Reminder{
 				ID:             0,
-				Name:           "a",
-				Description:    "a",
+				TaskID:         1,
 				StartTime:      mockedTimeNowParsed,
 				EndTime:        time.Time{},
 				RepeatHourly:   "",
@@ -211,27 +184,26 @@ func TestNewTask(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewTask(tt.args.name, tt.args.description, tt.args.startTime, tt.args.endTime, tt.args.repeatHourly, tt.args.repeatDaily)
+			got, err := NewReminder(tt.args.taskID, tt.args.startTime, tt.args.endTime, tt.args.repeatHourly, tt.args.repeatDaily)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewTask() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewReminder() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewTask() = %+v, want %+v", got, tt.want)
+				t.Errorf("NewReminder() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestTask_GetNextRunAt(t *testing.T) {
+func TestReminder_GetNextRunAt(t *testing.T) {
 
 	mockedTimeNow := "2025-07-20T10:38:23+07:00"
 	mockedTimeNowParsed, _ := time.Parse(time.RFC3339, mockedTimeNow)
 	mockedTimeNowAfterOneHour := "2025-07-20T11:38:23+07:00"
 	// mockedTimeNowAfterOneDayParsed, _ := time.Parse(time.RFC3339, mockedTimeNowAfterOneHour)
 	type fields struct {
-		name         string
-		description  string
+		taskID       int64
 		startTime    string
 		endTime      string
 		repeatHourly string
@@ -249,10 +221,9 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "not a routine",
 			fields: fields{
-				name:        "a",
-				description: "a",
-				startTime:   mockedTimeNow,
-				endTime:     mockedTimeNowAfterOneHour,
+				taskID:    1,
+				startTime: mockedTimeNow,
+				endTime:   mockedTimeNowAfterOneHour,
 			},
 			args: args{
 				lastRun: time.Time{},
@@ -262,8 +233,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "last run is empty and within endtime",
 			fields: fields{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "20m",
@@ -277,8 +247,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "last run is not empty and within endtime",
 			fields: fields{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "10m",
@@ -292,8 +261,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "last run is not empty and within endtime",
 			fields: fields{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "10m",
@@ -307,8 +275,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "last run is not empty. within endtime, and repeatDaily is available",
 			fields: fields{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "10m",
@@ -322,8 +289,7 @@ func TestTask_GetNextRunAt(t *testing.T) {
 		{
 			name: "last run is not empty. within endtime, and repeatDaily is empty",
 			fields: fields{
-				name:         "a",
-				description:  "a",
+				taskID:       1,
 				startTime:    mockedTimeNow,
 				endTime:      mockedTimeNowAfterOneHour,
 				repeatHourly: "10m",
@@ -337,13 +303,13 @@ func TestTask_GetNextRunAt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := NewTask(tt.fields.name, tt.fields.description, tt.fields.startTime, tt.fields.endTime, tt.fields.repeatHourly, tt.fields.repeatDaily)
+			s, err := NewReminder(tt.fields.taskID, tt.fields.startTime, tt.fields.endTime, tt.fields.repeatHourly, tt.fields.repeatDaily)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 			if got := s.GetNextRunAt(tt.args.lastRun); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Task.GetNextRunAt() = %v, want %v", got, tt.want)
+				t.Errorf("Reminder.GetNextRunAt() = %v, want %v", got, tt.want)
 			}
 		})
 	}

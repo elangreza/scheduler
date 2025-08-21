@@ -1,10 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/elangreza/scheduler/config"
+	"github.com/elangreza/scheduler/internal/rest"
+	"github.com/elangreza/scheduler/internal/service"
+	"github.com/elangreza/scheduler/internal/sqliterepo"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
@@ -13,7 +21,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(cfg)
+	// if file db not exist create new one
+	if !fileExists(cfg.DBFile) {
+		if err := createDBFile(cfg.DBFile); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	db, err := sqliterepo.NewSql(cfg.DBFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if err := migrateDB(db); err != nil {
+		log.Fatal(err)
+	}
+
+	taskRepo := sqliterepo.NewTaskRepository(db)
+	schedulerService := service.NewTaskService(taskRepo)
+	handler := rest.NewHandler(schedulerService)
+
+	http.HandleFunc("POST /tasks", handler.CreateTask)
+
+	http.ListenAndServe(":8080", nil)
 
 	// to := []string{"babehracing14@gmail.com"}
 	// cc := []string{}
@@ -25,4 +61,43 @@ func main() {
 	// 	log.Fatal(err.Error())
 	// }
 
+}
+
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return !os.IsNotExist(err)
+}
+
+func createDBFile(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return nil
+}
+
+func migrateDB(db *sql.DB) error {
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	migrationsPath := "file://./migrations"
+	if _, err := os.Stat("./migrations"); os.IsNotExist(err) {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		migrationsPath,
+		"sqlite3", driver)
+	if err != nil {
+		return err
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	return nil
 }
